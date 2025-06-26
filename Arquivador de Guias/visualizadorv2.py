@@ -9,6 +9,7 @@ from utils import (
     gravar_documento_bd,
     mover_pdf_para_pasta_destino,
     renomear_pdf,
+    carregar_processos,
     SUMATRA_PATH
 )
 import subprocess
@@ -24,6 +25,7 @@ class VisualizadorGuias:
         self.index_atual = 0
         self.viewer_process = None
         self.fornecedores = obter_fornecedores()
+        self.processos = carregar_processos()
 
         if not self.pdfs:
             messagebox.showerror("Erro", "Nenhuma Guia encontrada na pasta 'separados'.")
@@ -33,9 +35,6 @@ class VisualizadorGuias:
         self.abrir_pdf(self.pdfs[self.index_atual])
         self.root.mainloop()
 
-    # ----------------------------------------------
-    # Interface Gráfica
-    # ----------------------------------------------
     def inicializar_interface(self):
         self.root = tk.Tk()
         self.root.title("Visualizador de Guias de Transporte")
@@ -47,7 +46,7 @@ class VisualizadorGuias:
         self.entry_ano = tk.Entry(self.root)
         self.entry_numero = tk.Entry(self.root)
         self.entry_data = tk.Entry(self.root)
-        self.entry_processo = tk.Entry(self.root)
+        self.processo_var = tk.StringVar()
 
         self._criar_widgets()
 
@@ -56,7 +55,7 @@ class VisualizadorGuias:
         self._adicionar_label_entry("Ano:", self.entry_ano)
         self._adicionar_label_entry("Número da Guia:", self.entry_numero)
         self._adicionar_label_entry("Data da Guia:", self.entry_data)
-        self._adicionar_label_entry("Número de Processo:", self.entry_processo)
+        self._adicionar_label_entry("Número de Processo:", self.processo_var, is_combobox=True)
 
         tk.Button(self.root, text="◀ Anterior", command=self.mostrar_anterior).pack(pady=10)
         tk.Button(self.root, text="Próximo ▶", command=self.mostrar_proximo).pack(pady=10)
@@ -68,16 +67,18 @@ class VisualizadorGuias:
         tk.Label(self.root, text=texto).pack(pady=5)
         if is_combobox:
             combo = ttk.Combobox(self.root, textvariable=var, state="normal", width=40)
-            combo["values"] = list(self.fornecedores.values())
-            combo.bind("<KeyRelease>", self.filtrar_fornecedores)
+            if texto.startswith("Fornecedor"):
+                combo["values"] = list(self.fornecedores.values())
+                combo.bind("<KeyRelease>", self.filtrar_fornecedores)
+                self.combo_fornecedor = combo
+            elif texto.startswith("Número de Processo"):
+                combo["values"] = [f"{p['referencia']} - {p['nome_cliente']}" for p in self.processos]
+                combo.bind("<KeyRelease>", self.filtrar_processos)
+                self.combo_processo = combo
             combo.pack(pady=5)
-            self.combo_fornecedor = combo
         else:
             var.pack(pady=5)
 
-    # ----------------------------------------------
-    # Lógica dos PDFs
-    # ----------------------------------------------
     def listar_pdfs(self):
         try:
             return [f for f in os.listdir(self.pasta_pdf) if f.lower().endswith('.pdf')]
@@ -122,19 +123,17 @@ class VisualizadorGuias:
         self.root.destroy()
 
     def salvar_dados(self):
-        """Salva os dados no banco e move o PDF para a pasta final."""
         fornecedor_nome = self.fornecedor_var.get().strip()
         ano = self.entry_ano.get().strip()
         numero = self.entry_numero.get().strip()
         data = self.entry_data.get().strip()
-        processo = self.entry_processo.get().strip()
+        processo_str = self.processo_var.get().strip()
+        processo = processo_str.split(" - ")[0] if processo_str else ""
 
-        # Validação básica
         if not all([fornecedor_nome, ano, numero, data]):
             messagebox.showwarning("Campos obrigatórios", "Preencha todos os campos obrigatórios.")
             return
 
-        # Buscar NIF correspondente ao nome do fornecedor
         fornecedor_nif = None
         for nif, nome in self.fornecedores.items():
             if nome == fornecedor_nome:
@@ -155,11 +154,9 @@ class VisualizadorGuias:
         caminho_pdf = os.path.join(self.pasta_pdf, nome_pdf)
 
         try:
-            # Define a pasta destino com base no nome do fornecedor
             nome_pasta_fornecedor = fornecedor_nome
             pasta_destino_base = os.path.join(self.base_dir, "arquivados")
 
-            # Mover o PDF para a pasta destino
             caminho_movido = mover_pdf_para_pasta_destino(
                 caminho_pdf=caminho_pdf,
                 fornecedor=nome_pasta_fornecedor,
@@ -167,14 +164,12 @@ class VisualizadorGuias:
                 pasta_base=pasta_destino_base
             )
 
-            # Renomear o PDF dentro da nova pasta
             caminho_final = renomear_pdf(
                 caminho_pdf=caminho_movido,
                 numero=numero,
                 ano=ano
             )
 
-            # Gravar os dados no banco, usando o caminho final
             gravar_documento_bd(
                 fornecedor=fornecedor_nif,
                 numero=numero,
@@ -184,13 +179,9 @@ class VisualizadorGuias:
                 caminho_pdf=caminho_final
             )
 
-            
-
             messagebox.showinfo("Sucesso", "Guia gravada e movida com sucesso.")
-            # Atualiza lista de PDFs removendo o atual
             del self.pdfs[self.index_atual]
 
-            # Decide qual mostrar a seguir
             if self.pdfs:
                 if self.index_atual >= len(self.pdfs):
                     self.index_atual = len(self.pdfs) - 1
@@ -205,7 +196,6 @@ class VisualizadorGuias:
             messagebox.showerror("Erro", f"Erro ao salvar ou mover guia: {e}")
 
     def eliminar_pdf(self):
-        """Remove o PDF atual após confirmação do usuário."""
         if not self.pdfs:
             return
 
@@ -237,23 +227,18 @@ class VisualizadorGuias:
             except Exception as e:
                 messagebox.showerror("Erro", f"Erro ao eliminar: {e}")
 
-
-    # ----------------------------------------------
-    # Processamento do QR Code
-    # ----------------------------------------------
     def preencher_dados_do_qr(self, caminho_pdf):
-        # Limpa todos os campos antes de tentar preencher
         self.fornecedor_var.set("")
         self.entry_data.delete(0, tk.END)
         self.entry_ano.delete(0, tk.END)
         self.entry_numero.delete(0, tk.END)
-        self.entry_processo.delete(0, tk.END)
+        self.processo_var.set("")
+
         dados_qr = extrair_dados_qrcode_de_pdf(caminho_pdf)
         if not dados_qr:
             print("⚠️ Nenhum dado encontrado no QR Code.")
             return
 
-        # Fornecedor
         nif = dados_qr.get("nif_emitente")
         fornecedor_nome = self.fornecedores.get(nif)
         if fornecedor_nome:
@@ -261,7 +246,6 @@ class VisualizadorGuias:
         else:
             print(f"⚠️ NIF {nif} não encontrado nos fornecedores.")
 
-        # Data
         data_qr = dados_qr.get("data_doc", "").strip()
         data_formatada = None
         if data_qr:
@@ -274,27 +258,31 @@ class VisualizadorGuias:
 
         self.entry_data.delete(0, tk.END)
         if data_formatada:
-            self.entry_data.insert(0, data_formatada.isoformat())  # YYYY-MM-DD
-            # Preencher ano com base na data
+            self.entry_data.insert(0, data_formatada.isoformat())
             self.entry_ano.delete(0, tk.END)
             self.entry_ano.insert(0, str(data_formatada.year))
         else:
             print(f"⚠️ Data inválida ou ausente no QR: '{data_qr}'")
 
-        # Ano
         ano = str(data_formatada.year) if data_formatada else str(datetime.datetime.now().year)
         self.entry_ano.delete(0, tk.END)
         self.entry_ano.insert(0, ano)
 
-        # Número
         numero = dados_qr.get("numero_doc", "")
         self.entry_numero.delete(0, tk.END)
         self.entry_numero.insert(0, numero)
 
-    # ----------------------------------------------
-    # Filtro de fornecedores
-    # ----------------------------------------------
     def filtrar_fornecedores(self, event):
         texto = self.fornecedor_var.get().lower()
         filtrados = [nome for nome in self.fornecedores.values() if texto in nome.lower()]
         self.combo_fornecedor["values"] = filtrados
+
+    def filtrar_processos(self, event):
+        texto = self.processo_var.get().lower()
+        filtrados = [
+            f"{p['referencia']} - {p['nome_cliente']}"
+            for p in self.processos
+            if texto in p['referencia'].lower() or texto in p['nome_cliente'].lower()
+        ]
+        self.combo_processo['values'] = filtrados
+
