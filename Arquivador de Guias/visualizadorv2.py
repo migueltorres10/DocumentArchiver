@@ -27,6 +27,7 @@ class VisualizadorGuias:
         self.fornecedores = obter_fornecedores()
         self.processos = carregar_processos()
 
+
         if not self.pdfs:
             messagebox.showerror("Erro", "Nenhuma Guia encontrada na pasta 'separados'.")
             return
@@ -55,13 +56,17 @@ class VisualizadorGuias:
         self._adicionar_label_entry("Ano:", self.entry_ano)
         self._adicionar_label_entry("Número da Guia:", self.entry_numero)
         self._adicionar_label_entry("Data da Guia:", self.entry_data)
-        self._adicionar_label_entry("Número de Processo:", self.processo_var, is_combobox=True)
+        self._adicionar_label_entry("Número de Processo:", self.processo_var, is_combobox="processo")
 
-        tk.Button(self.root, text="◀ Anterior", command=self.mostrar_anterior).pack(pady=10)
-        tk.Button(self.root, text="Próximo ▶", command=self.mostrar_proximo).pack(pady=10)
-        tk.Button(self.root, text="💾 Salvar no Banco", command=self.salvar_dados).pack(pady=20)
-        tk.Button(self.root, text="Eliminar", command=self.eliminar_pdf, fg="red").pack(pady=5)
-        tk.Button(self.root, text="Terminar", command=self.terminar).pack(pady=5)
+        nav_frame = tk.Frame(self.root)
+        nav_frame.pack(pady=10)
+        tk.Button(nav_frame, text="◀ Anterior", width=12, command=self.mostrar_anterior).pack(side="left", padx=5)
+        tk.Button(nav_frame, text="Próximo ▶", width=12, command=self.mostrar_proximo).pack(side="left", padx=5)
+        action_frame = tk.Frame(self.root)
+        action_frame.pack(pady=15)
+        tk.Button(action_frame, text="💾 Salvar no Banco", width=25, command=self.salvar_dados).pack(pady=3)
+        tk.Button(action_frame, text="Eliminar", width=25, fg="red", command=self.eliminar_pdf).pack(pady=3)
+        tk.Button(action_frame, text="Terminar", width=25, command=self.terminar).pack(pady=3)
 
     def _adicionar_label_entry(self, texto, var, is_combobox=False):
         tk.Label(self.root, text=texto).pack(pady=5)
@@ -72,7 +77,8 @@ class VisualizadorGuias:
                 combo.bind("<KeyRelease>", self.filtrar_fornecedores)
                 self.combo_fornecedor = combo
             elif texto.startswith("Número de Processo"):
-                combo["values"] = [f"{p['referencia']} - {p['nome_cliente']}" for p in self.processos]
+                valores_processo = [f"{p['referencia']} - {p['nome_cliente']}" for p in self.processos]
+                combo["values"] = valores_processo
                 combo.bind("<KeyRelease>", self.filtrar_processos)
                 self.combo_processo = combo
             combo.pack(pady=5)
