@@ -5,33 +5,15 @@ from tkinter import ttk, messagebox
 
 # Adicionar caminho do projeto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import obter_clientes
+from utils import obter_clientes, carregar_processos
 from config import connect_bd
 
 class GestorProcessos:
     def __init__(self):
         self.clientes = obter_clientes()
-        self.processos = self.carregar_processos()
+        self.processos = carregar_processos()
         self.referencia_selecionada = None
         self.inicializar_interface()
-
-    def carregar_processos(self):
-        conn = connect_bd("D")
-        cursor = conn.cursor()
-        cursor.execute("SELECT referencia, nif_cliente, descricao FROM processos")
-        dados = cursor.fetchall()
-        conn.close()
-
-        processos = []
-        for ref, nif, desc in dados:
-            nome = self.clientes.get(nif, "Desconhecido")
-            processos.append({
-                "referencia": ref,
-                "nif_cliente": nif,
-                "nome_cliente": nome,
-                "descricao": desc
-            })
-        return processos
 
     def inicializar_interface(self):
         self.root = tk.Tk()
@@ -145,7 +127,7 @@ class GestorProcessos:
                 """, (referencia, nif_cliente, descricao))
 
             conn.commit()
-            self.processos = self.carregar_processos()
+            self.processos = carregar_processos()
             self.atualizar_lista()
             messagebox.showinfo("Sucesso", "Processo salvo com sucesso.")
         except Exception as e:
@@ -167,7 +149,7 @@ class GestorProcessos:
         try:
             cursor.execute("DELETE FROM processos WHERE referencia = ?", (self.referencia_selecionada,))
             conn.commit()
-            self.processos = self.carregar_processos()
+            self.processos = carregar_processos()
             self.novo_processo()
             self.atualizar_lista()
             messagebox.showinfo("Removido", "Processo eliminado com sucesso.")

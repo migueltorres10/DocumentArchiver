@@ -79,6 +79,26 @@ def obter_clientes():
     
     return clientes
 
+def carregar_processos():
+    conn = connect_bd("D")
+    cursor = conn.cursor()
+    cursor.execute("SELECT referencia, nif_cliente, descricao FROM processos")
+    dados = cursor.fetchall()
+    conn.close()
+
+    clientes = obter_clientes()
+
+    processos = []
+    for ref, nif, desc in dados:
+        nome = clientes.get(nif, "Desconhecido")
+        processos.append({
+            "referencia": ref,
+            "nif_cliente": nif,
+            "nome_cliente": nome,
+            "descricao": desc
+        })
+    return processos
+
 def dividir_e_mover_pdf(pasta_origem, pasta_obsoletos, pasta_separados):
     """
     Divide cada PDF multi-página em páginas únicas usando PyMuPDF (fitz).
