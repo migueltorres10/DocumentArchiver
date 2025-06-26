@@ -9,14 +9,15 @@ from utils import obter_clientes, carregar_processos
 from config import connect_bd
 
 class GestorProcessos:
-    def __init__(self):
+    def __init__(self, on_close=None):
         self.clientes = obter_clientes()
         self.processos = carregar_processos()
         self.referencia_selecionada = None
         self.inicializar_interface()
+        self.on_close = on_close
 
     def inicializar_interface(self):
-        self.root = tk.Tk()
+        self.root = tk.Toplevel()
         self.root.title("Gestor de Processos")
         self.root.geometry("450x480")
 
@@ -60,9 +61,12 @@ class GestorProcessos:
         tk.Button(frame_botoes, text="Novo", width=10, command=self.novo_processo).grid(row=0, column=0, padx=5)
         tk.Button(frame_botoes, text="Salvar", width=10, command=self.salvar_processo).grid(row=0, column=1, padx=5)
         tk.Button(frame_botoes, text="Eliminar", width=10, command=self.eliminar_processo).grid(row=0, column=2, padx=5)
-        tk.Button(frame_botoes, text="Fechar", width=10, command=self.root.destroy).grid(row=0, column=3, padx=5)
+        tk.Button(frame_botoes, text="Fechar", width=10, command=self.fechar_janela).grid(row=0, column=3, padx=5)
 
-        self.root.mainloop()
+    def fechar_janela(self):
+        if self.on_close:
+            self.on_close()
+        self.root.destroy()
 
     def filtrar_clientes(self, event):
         texto = self.nif_cliente_var.get().lower()

@@ -1,5 +1,5 @@
 # visualizador.py
-
+import sys
 import os
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -14,6 +14,8 @@ from utils import (
 )
 import subprocess
 import datetime
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from Processos.gerir_processos import GestorProcessos
 
 
 class VisualizadorGuias:
@@ -62,6 +64,9 @@ class VisualizadorGuias:
         nav_frame.pack(pady=10)
         tk.Button(nav_frame, text="◀ Anterior", width=12, command=self.mostrar_anterior).pack(side="left", padx=5)
         tk.Button(nav_frame, text="Próximo ▶", width=12, command=self.mostrar_proximo).pack(side="left", padx=5)
+            # 🔹 Botão para abrir gestor de processos
+        tk.Button(self.root, text="🧾 Gerir Processos", command=self.abrir_gestor_processos).pack(pady=5)
+
         action_frame = tk.Frame(self.root)
         action_frame.pack(pady=15)
         tk.Button(action_frame, text="💾 Salvar no Banco", width=25, command=self.salvar_dados).pack(pady=3)
@@ -127,6 +132,17 @@ class VisualizadorGuias:
     def terminar(self):
         self.fechar_pdf_anterior()
         self.root.destroy()
+    
+    def abrir_gestor_processos(self):
+        # Abre a janela de gestão de processos sem bloquear esta janela
+        self.root.after(100, GestorProcessos(on_close=self.recarregar_processos))
+
+    def recarregar_processos(self):
+        # Recarrega os processos após fechar a janela de gestão
+        self.processos = carregar_processos()
+        valores_processo = [f"{p['referencia']} - {p['nome_cliente']}" for p in self.processos]
+        self.combo_processo["values"] = valores_processo        
+
 
     def salvar_dados(self):
         fornecedor_nome = self.fornecedor_var.get().strip()
