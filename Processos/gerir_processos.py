@@ -36,7 +36,7 @@ class GestorProcessos:
     def inicializar_interface(self):
         self.root = tk.Tk()
         self.root.title("Gestor de Processos")
-        self.root.geometry("600x450")
+        self.root.geometry("450x480")
 
         # Campo de pesquisa
         tk.Label(self.root, text="Pesquisar:").pack(pady=2)
@@ -54,31 +54,31 @@ class GestorProcessos:
 
         # Campos de edição
         frame_edicao = tk.Frame(self.root)
-        frame_edicao.pack(pady=5)
+        frame_edicao.pack(pady=5, padx=10, fill='x')
 
-        tk.Label(frame_edicao, text="Referência:").grid(row=0, column=0, sticky='e')
+        tk.Label(frame_edicao, text="Referência:").grid(row=0, column=0, sticky='e', padx=5, pady=2)
         self.referencia_var = tk.StringVar()
-        tk.Entry(frame_edicao, textvariable=self.referencia_var, width=50).grid(row=0, column=1, padx=5)
+        tk.Entry(frame_edicao, textvariable=self.referencia_var, width=45).grid(row=0, column=1, sticky='w', pady=2)
 
-        tk.Label(frame_edicao, text="Cliente (NIF):").grid(row=1, column=0, sticky='e')
+        tk.Label(frame_edicao, text="Cliente (NIF):").grid(row=1, column=0, sticky='e', padx=5, pady=2)
         self.nif_cliente_var = tk.StringVar()
-        self.combo_clientes = ttk.Combobox(frame_edicao, textvariable=self.nif_cliente_var, width=48)
+        self.combo_clientes = ttk.Combobox(frame_edicao, textvariable=self.nif_cliente_var, width=43)
         self.combo_clientes['values'] = [f"{nif} - {nome}" for nif, nome in self.clientes.items()]
-        self.combo_clientes.grid(row=1, column=1, padx=5)
-        self.combo_clientes.bind("<KeyRelease>", self.filtrar_clientes) 
+        self.combo_clientes.grid(row=1, column=1, sticky='w', pady=2)
+        self.combo_clientes.bind("<KeyRelease>", self.filtrar_clientes)
 
-        tk.Label(frame_edicao, text="Descrição:").grid(row=2, column=0, sticky='ne')
-        self.descricao_text = tk.Text(frame_edicao, height=5, width=38)
-        self.descricao_text.grid(row=2, column=1, padx=5, pady=5)
+        tk.Label(frame_edicao, text="Descrição:").grid(row=2, column=0, sticky='ne', padx=5, pady=2)
+        self.descricao_text = tk.Text(frame_edicao, height=5, width=43)
+        self.descricao_text.grid(row=2, column=1, sticky='w', pady=2)
 
         # Botões
         frame_botoes = tk.Frame(self.root)
-        frame_botoes.pack(pady=5)
+        frame_botoes.pack(pady=10)
 
-        tk.Button(frame_botoes, text="Novo", command=self.novo_processo).grid(row=0, column=0, padx=5)
-        tk.Button(frame_botoes, text="Salvar", command=self.salvar_processo).grid(row=0, column=1, padx=5)
-        tk.Button(frame_botoes, text="Eliminar", command=self.eliminar_processo).grid(row=0, column=2, padx=5)
-        tk.Button(frame_botoes, text="Fechar", command=self.root.destroy).grid(row=0, column=3, padx=5)
+        tk.Button(frame_botoes, text="Novo", width=10, command=self.novo_processo).grid(row=0, column=0, padx=5)
+        tk.Button(frame_botoes, text="Salvar", width=10, command=self.salvar_processo).grid(row=0, column=1, padx=5)
+        tk.Button(frame_botoes, text="Eliminar", width=10, command=self.eliminar_processo).grid(row=0, column=2, padx=5)
+        tk.Button(frame_botoes, text="Fechar", width=10, command=self.root.destroy).grid(row=0, column=3, padx=5)
 
         self.root.mainloop()
 
