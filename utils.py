@@ -212,7 +212,7 @@ def extrair_ano(data_doc=None):
         return data_doc[:4]
     return str(datetime.now().year)
 
-def gravar_documento_bd(fornecedor, numero, ano, data, processo, caminho_pdf):
+def gravar_guia_bd(fornecedor, numero, ano, data, processo, caminho_pdf):
     try:
         conn = connect_bd("D")
         cursor = conn.cursor()
@@ -223,6 +223,21 @@ def gravar_documento_bd(fornecedor, numero, ano, data, processo, caminho_pdf):
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (fornecedor, numero, data, ano, processo, caminho_pdf, data_registo))
 
+        conn.commit()
+        conn.close()
+        print("✅ Documento registado com sucesso na base de dados.")
+    except Exception as e:
+        print(f"❌ Erro ao gravar documento: {e}")
+
+def gravar_fatura_bd(fornecedor, tipo_doc, numero, ano, data, base, iva, total, processo, caminho_pdf):
+    try:
+        conn = connect_bd("D")
+        cursor = conn.cursor()
+        data_registo = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("""
+            INSERT INTO documentos_faturacao (fornecedor, tipo_doc, numero_doc, ano, data_doc, valor_base, iva, total, processo, caminho_ficheiro, data_insercao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+        """, (fornecedor, tipo_doc, numero, ano, data, base, iva, total, processo, caminho_pdf, data_registo))
         conn.commit()
         conn.close()
         print("✅ Documento registado com sucesso na base de dados.")

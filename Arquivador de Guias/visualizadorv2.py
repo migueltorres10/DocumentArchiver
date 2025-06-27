@@ -6,7 +6,7 @@ from tkinter import messagebox, ttk
 from utils import (
     obter_fornecedores,
     extrair_dados_qrcode_de_pdf,
-    gravar_documento_bd,
+    gravar_guia_bd,
     mover_pdf_para_pasta_destino,
     renomear_pdf,
     carregar_processos,
@@ -192,7 +192,7 @@ class VisualizadorGuias:
                 ano=ano
             )
 
-            gravar_documento_bd(
+            gravar_guia_bd(
                 fornecedor=fornecedor_nif,
                 numero=numero,
                 ano=ano,
