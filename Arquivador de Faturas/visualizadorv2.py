@@ -41,7 +41,7 @@ class VizualizadorFaturas:
     def inicializar_interface(self):
         self.root = tk.Tk()
         self.root.title("Visualizador de Documentos de Faturação")
-        self.root.geometry("400x500")
+        self.root.geometry("350x760")
         self.root.eval('tk::PlaceWindow . center')
         self.root.attributes('-topmost', 1)
 
